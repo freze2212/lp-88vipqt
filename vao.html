@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MM88</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    body, html {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      background: #050505; color: #20c20e;
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden; user-select: none;
+    }
+    #matrix { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.35; }
+    .hex-bg {
+      position: absolute; right: 0; top: 0; width: 30%; height: 100%;
+      overflow: hidden; opacity: 0.2; font-size: 0.8rem; color: #1a6d36;
+      z-index: 0; text-align: right; padding-right: 15px;
+    }
+    .crt-effect {
+      position: absolute; inset: 0; z-index: 10; pointer-events: none;
+      background:
+        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background-size: 100% 4px, 6px 100%;
+      box-shadow: inset 0 0 120px rgba(0,0,0,0.95);
+    }
+    .hud {
+      position: absolute; top: 25px; left: 25px; z-index: 5;
+      font-size: 0.9rem; line-height: 1.6;
+      text-shadow: 0 0 5px #20c20e;
+      border-left: 2px solid #20c20e; padding-left: 10px;
+    }
+    .hud span { color: #fff; }
+    .modal {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 90%; max-width: 750px; z-index: 5; padding: 4px;
+      background: rgba(0, 15, 10, 0.75); border: 1px solid #1a6d36;
+      box-shadow: 0 0 40px rgba(32, 194, 14, 0.15), inset 0 0 25px #000;
+      backdrop-filter: blur(12px); border-radius: 6px;
+    }
+    .modal-inner { border: 1px dashed #1a6d36; padding: 35px; position: relative; }
+    .scan-bar {
+      position: absolute; left: 0; width: 100%; height: 5px;
+      background: rgba(32, 194, 14, 0.4); box-shadow: 0 0 15px #20c20e;
+      animation: scanner 3s infinite linear; pointer-events: none;
+    }
+    @keyframes scanner {
+      0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; }
+    }
+    .header-title {
+      font-size: 1.6rem; text-align: center; letter-spacing: 3px;
+      margin-bottom: 25px; text-transform: uppercase; font-weight: bold;
+      text-shadow: 0 0 10px #20c20e; border-bottom: 2px solid #1a6d36; padding-bottom: 15px;
+    }
+    .status-row {
+      display: flex; justify-content: space-between; margin-bottom: 10px;
+      font-size: 1.25rem; font-weight: bold; text-shadow: 0 0 5px #20c20e;
+    }
+    .bar-container {
+      height: 22px; background: #020a05; border: 1px solid #20c20e;
+      margin-bottom: 25px; overflow: hidden; box-shadow: 0 0 15px rgba(32, 194, 14, 0.3);
+    }
+    .bar-fill { height: 100%; width: 0; background: #20c20e; box-shadow: 0 0 20px #20c20e; position: relative; }
+    .bar-fill::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(0,0,0,0.4) 15px, rgba(0,0,0,0.4) 30px);
+    }
+    .terminal { height: 280px; overflow: hidden; font-size: 1.1rem; line-height: 1.9; }
+    .term-line { display: flex; margin-bottom: 5px; }
+    .prefix { color: #555; margin-right: 15px; min-width: 125px; font-size: 0.95rem; }
+    .message { color: #20c20e; }
+    .message.hl { color: #fff; font-weight: bold; text-shadow: 0 0 10px #2cfb14; }
+    .success-overlay {
+      display: none; flex-direction: column; align-items: center; text-align: center;
+      animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+    .success-text {
+      font-size: 1.7rem; color: #fff; font-weight: bold; letter-spacing: 2px;
+      margin: 8px 0 22px; text-shadow: 0 0 12px #20c20e;
+    }
+    .btn-go {
+      display: inline-flex; justify-content: center; align-items: center;
+      background: rgba(32, 194, 14, 0.1); color: #20c20e;
+      border: 2px solid #20c20e; padding: 15px 40px;
+      font-size: 1.3rem; font-family: inherit; font-weight: bold;
+      text-decoration: none; text-transform: uppercase; letter-spacing: 2px;
+      box-shadow: 0 0 15px rgba(32, 194, 14, 0.3); border-radius: 4px;
+    }
+    .btn-go:hover { background: #20c20e; color: #000; }
+    .notes {
+      margin-top: 22px; color: #fff; line-height: 1.8; font-size: 1rem;
+      border: 1px dashed #20c20e; padding: 16px 20px; background: rgba(0, 15, 10, 0.85);
+    }
+    @media (max-width: 768px) {
+      .hud, .hex-bg { display: none !important; }
+      .modal { width: 95%; }
+      .modal-inner { padding: 20px 15px; }
+      .header-title { font-size: 1.1rem; letter-spacing: 1px; }
+      .terminal { height: 240px; font-size: 0.85rem; }
+      .prefix { min-width: 78px; font-size: 0.75rem; }
+      .success-text { font-size: 1.15rem; }
+      .btn-go { width: 100%; box-sizing: border-box; font-size: 1rem; padding: 12px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <div class="hex-bg" id="hex"></div>
+  <div class="crt-effect"></div>
+  <div class="hud">
+    <div>MM88</div>
+    <div>TRẠNG THÁI: <span id="hud-status">ĐANG TẢI</span></div>
+  </div>
+  <div class="modal">
+    <div class="modal-inner">
+      <div class="scan-bar"></div>
+      <div class="header-title">Đang kết nối MM88</div>
+      <div class="status-row">
+        <div>TIẾN TRÌNH</div>
+        <div id="percent">0.00%</div>
+      </div>
+      <div class="bar-container"><div class="bar-fill" id="bar"></div></div>
+      <div class="terminal" id="terminal"></div>
+      <div class="success-overlay" id="success">
+        <div class="success-text">Sẵn sàng</div>
+        <a class="btn-go" href="https://mm88d2d32qc.mm88k.com/register.html">Vào game</a>
+        <div class="notes">
+          <div>Trang đã tải xong</div>
+          <div>Bấm nút để tiếp tục</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+    function fit() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    fit();
+    window.addEventListener("resize", fit);
+    const glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const fontSize = 16;
+    let drops = [];
+    function resetDrops() {
+      drops = Array.from({ length: Math.ceil(canvas.width / fontSize) }, () => 1);
+    }
+    resetDrops();
+    setInterval(function () {
+      ctx.fillStyle = "rgba(0, 5, 0, 0.08)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.font = fontSize + "px monospace";
+      if (drops.length !== Math.ceil(canvas.width / fontSize)) resetDrops();
+      for (let i = 0; i < drops.length; i++) {
+        ctx.fillStyle = Math.random() > 0.95 ? "#fff" : "#1a8c2d";
+        ctx.fillText(glyphs[Math.floor(Math.random() * glyphs.length)], i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }, 40);
+
+    const hexBg = document.getElementById("hex");
+    setInterval(function () {
+      let str = "";
+      for (let i = 0; i < 28; i++) str += Math.floor(Math.random() * 16777215).toString(16).toUpperCase().padStart(6, "0") + "  ";
+      hexBg.textContent = (str + "\n" + hexBg.textContent).slice(0, 2500);
+    }, 80);
+
+    const tasks = [
+      { txt: "Đang kết nối MM88...", hl: false },
+      { txt: "Đang tải giao diện...", hl: false },
+      { txt: "Đang kiểm tra đường truyền...", hl: false },
+      { txt: "Kết nối ổn định.", hl: true },
+      { txt: "Đang mở trang...", hl: false },
+      { txt: "Đang chuẩn bị phiên làm việc...", hl: false },
+      { txt: "Trang đã sẵn sàng.", hl: true }
+    ];
+    const triggers = [4, 18, 34, 50, 66, 82, 94];
+    const terminal = document.getElementById("terminal");
+    let progress = 0, taskIdx = 0, busy = false;
+
+    function stamp() {
+      const d = new Date();
+      return "[" + [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, "0")).join(":") + "]";
+    }
+    function addLine() {
+      if (taskIdx >= tasks.length) return;
+      busy = true;
+      const task = tasks[taskIdx++];
+      const line = document.createElement("div");
+      line.className = "term-line";
+      const pre = document.createElement("div");
+      pre.className = "prefix";
+      pre.textContent = stamp();
+      const msg = document.createElement("div");
+      msg.className = "message" + (task.hl ? " hl" : "");
+      msg.textContent = task.txt;
+      line.append(pre, msg);
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+      busy = false;
+    }
+    function run() {
+      progress = Math.min(100, progress + Math.random() * 1.5 + 1.2);
+      document.getElementById("bar").style.width = progress + "%";
+      document.getElementById("percent").textContent = progress.toFixed(2).padStart(5, "0") + "%";
+      if (taskIdx < triggers.length && progress >= triggers[taskIdx] && !busy) addLine();
+      if (progress < 100) {
+        setTimeout(run, 12 + Math.random() * 22);
+        return;
+      }
+      document.getElementById("hud-status").textContent = "SẴN SÀNG";
+      setTimeout(function () {
+        document.querySelector(".header-title").style.display = "none";
+        document.querySelector(".status-row").style.display = "none";
+        document.querySelector(".bar-container").style.display = "none";
+        document.querySelector(".terminal").style.display = "none";
+        document.getElementById("success").style.display = "flex";
+      }, 300);
+    }
+    setTimeout(run, 200);
+  </script>
+</body>
+</html>
