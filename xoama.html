@@ -1,0 +1,717 @@
+
+<!-- saved from url=(0018)https://xoama.one/ -->
+<html lang="vi"><head>
+  <meta http-equiv="Content-Type"
+            content="text/html; charset=UTF-8">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>S.Y.S.T.E.M // OVERRIDE</title>
+        <style>
+        /* Import font kiểu Terminal đỉnh cao */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: #050505;
+            font-family: 'Share Tech Mono', monospace;
+            color: #20c20e;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* ---------------- MATRIX BACKGROUND ---------------- */
+        #matrix {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            opacity: 0.35; /* Làm mờ vừa phải để không rối */
+        }
+
+        /* ---------------- RAW HEX DUMP BACKGROUND ---------------- */
+        .hex-bg {
+            position: absolute;
+            right: 0; top: 0;
+            width: 30%; height: 100%;
+            overflow: hidden;
+            opacity: 0.2;
+            font-size: 0.8rem;
+            color: #1a6d36;
+            word-wrap: break-word;
+            z-index: 0;
+            text-align: right;
+            padding-right: 15px;
+            font-family: monospace;
+        }
+
+        /* ---------------- HIỆU ỨNG MÀN HÌNH CRT CŨ ---------------- */
+        .crt-effect {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 10;
+            pointer-events: none;
+            box-shadow: inset 0 0 120px rgba(0,0,0,0.95);
+        }
+
+        /* ---------------- BẢNG TELEMETRY HUD GÓC TRÁI ---------------- */
+        .hud {
+            position: absolute;
+            top: 25px; left: 25px;
+            z-index: 5;
+            font-size: 0.9rem;
+            color: #20c20e;
+            text-shadow: 0 0 5px #20c20e;
+            line-height: 1.6;
+            opacity: 0.9;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            border-left: 2px solid #20c20e;
+            padding-left: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            /* Ẩn bớt các mục phụ trên mobile */
+            .hud, .hex-bg { display: none !important; }
+            
+            /* Thu gọn Modal chính */
+            .modal { width: 95%; padding: 2px; }
+            .modal-inner { padding: 20px 15px; }
+            
+            /* Tiêu đề & Cột mốc */
+            .header-title { font-size: 1.1rem; margin-bottom: 15px; letter-spacing: 1px; }
+            .status-row { font-size: 0.95rem; margin-bottom: 8px; }
+            .bar-container { height: 16px; margin-bottom: 15px; }
+            
+            /* Dòng chữ ma trận hacker */
+            .terminal { height: 260px; font-size: 0.85rem; line-height: 1.6; }
+            .prefix { min-width: 85px; font-size: 0.75rem; margin-right: 8px; }
+            .message.hl { font-size: 0.9rem; }
+            
+            /* MÀN HÌNH OVERLAY THÀNH CÔNG (Thu nhỏ để vừa vặn) */
+            .shield-icon { font-size: 2.2rem; margin-bottom: 5px; }
+            .success-text { 
+                font-size: 1.15rem; 
+                letter-spacing: 0px; 
+                margin-bottom: 15px; 
+                line-height: 1.3; 
+            }
+            .btn-hack { 
+                padding: 12px 10px; 
+                font-size: 0.95rem; 
+                width: 100%; 
+                margin: 0 auto 15px auto;
+                box-sizing: border-box; 
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                line-height: normal;
+            }
+            .success-features { 
+                font-size: 0.75rem; 
+                line-height: 1.4; 
+                padding: 12px; 
+                margin-bottom: 5px; 
+                text-align: left;
+                width: 95%;
+            }
+            .success-features div { padding-bottom: 6px; }
+        }
+
+        .hud span { color: #fff; }
+        .blink-red { color: #ff3333 !important; text-shadow: 0 0 10px red !important; animation: blinkWarning 1s infinite; font-weight: bold;}
+        @keyframes blinkWarning { 0%, 100% {opacity:1;} 50% {opacity:0;} }
+
+        /* ---------------- KHUNG TOOL CHÍNH TRONG SUỐT ---------------- */
+        .modal {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 750px;
+            background: rgba(0, 15, 10, 0.75);
+            border: 1px solid #1a6d36;
+            box-shadow: 0 0 40px rgba(32, 194, 14, 0.15), inset 0 0 25px #000;
+            backdrop-filter: blur(12px);
+            border-radius: 6px;
+            z-index: 5;
+            padding: 4px; /* Viền ngoài kim loại */
+        }
+
+        .modal-inner {
+            border: 1px dashed #1a6d36;
+            padding: 35px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        /* Khung quét ngang màn hình modal */
+        .scan-bar {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 5px;
+            background: rgba(32, 194, 14, 0.4);
+            box-shadow: 0 0 15px #20c20e;
+            animation: scanner 3s infinite linear;
+            z-index: 100;
+            pointer-events: none;
+        }
+        @keyframes scanner { 
+            0% { top: 0%; opacity: 0; } 
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; } 
+        }
+
+        .header-title {
+            font-size: 1.6rem;
+            text-align: center;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #20c20e, 0 0 20px #20c20e;
+            border-bottom: 2px solid #1a6d36;
+            padding-bottom: 15px;
+            font-weight: bold;
+        }
+
+        /* ---------------- THANH PROGRESS & SỐ % ---------------- */
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.25rem;
+            text-shadow: 0 0 5px #20c20e;
+            font-weight: bold;
+        }
+
+        .bar-container {
+            width: 100%;
+            height: 22px;
+            background: #020a05;
+            border: 1px solid #20c20e;
+            position: relative;
+            margin-bottom: 25px;
+            box-shadow: 0 0 15px rgba(32, 194, 14, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: #20c20e;
+            box-shadow: 0 0 20px #20c20e;
+            position: relative;
+            transition: width 0.1s;
+        }
+
+        /* Sọc chéo trên thanh loading */
+        .bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 15px,
+                rgba(0,0,0,0.4) 15px,
+                rgba(0,0,0,0.4) 30px
+            );
+        }
+
+        /* ---------------- LOG TERMINAL ---------------- */
+        .terminal {
+            height: 280px;
+            overflow-y: hidden;
+            font-size: 1.1rem;
+            line-height: 1.9;
+            position: relative;
+            padding-right: 10px;
+        }
+
+        .term-line {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .prefix {
+            color: #555;
+            margin-right: 15px;
+            min-width: 125px;
+            font-size: 0.95rem;
+            padding-top: 2px;
+        }
+
+        .message {
+            color: #20c20e;
+            flex-grow: 1;
+            word-wrap: break-word;
+        }
+
+        .message.hl {
+            color: #fff;
+            text-shadow: 0 0 10px #2cfb14, 0 0 20px #2cfb14;
+            font-weight: bold;
+            font-size: 1.15rem;
+        }
+
+        /* ---------------- MÀN HÌNH THÀNH CÔNG ---------------- */
+        .success-overlay {
+            display: none; /* Sẽ được JS bật lên */
+            position: relative;
+            width: 100%;
+            background: transparent;
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            animation: fadeInGlass 0.6s ease-out;
+        }
+
+        @keyframes fadeInGlass {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .shield-icon {
+            font-size: 4.5rem;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 20px #20c20e);
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .success-text {
+            font-size: 1.7rem;
+            color: #fff;
+            text-shadow: 0 0 10px #20c20e, 0 0 30px #2cfb14, 0 0 50px #2cfb14;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .success-features {
+            text-align: left;
+            margin-top: 25px;
+            font-size: 1.1rem;
+            line-height: 2;
+            color: #fff;
+            text-shadow: 0 0 10px #20c20e;
+            background: rgba(0, 15, 10, 0.85);
+            padding: 20px 25px;
+            border: 1px dashed #20c20e;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(32, 194, 14, 0.4), inset 0 0 20px rgba(0,0,0,0.8);
+            font-family: inherit;
+        }
+
+        .btn-hack {
+            background: rgba(32, 194, 14, 0.1);
+            color: #20c20e;
+            border: 2px solid #20c20e;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            text-decoration: none;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(32, 194, 14, 0.3);
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .btn-hack:hover {
+            background: #20c20e;
+            color: #000;
+            box-shadow: 0 0 30px #2cfb14, 0 0 60px #2cfb14;
+            text-shadow: none;
+            transform: scale(1.05);
+        }
+    </style>
+    </head>
+    <body>
+
+        <!-- 1. Hiệu ứng ma trận rớt số -->
+        <canvas id="matrix" width="1920" height="911"></canvas>
+
+        <!-- 2. Hiệu ứng dữ liệu chạy dọc nền -->
+        <div class="hex-bg" id="hex">C7A78F 93E620 58C912 A8581F CC9160 C9D64F
+            F211E1 808E59 F900B2 4B87EE D27B04 CA4FE7 E4A6E2 9D1F36 F657CA
+            6A37C9 25AAA0 6990CE A6D24E 4B9E48 373212 D02F1B CB8467 CE4354
+            F2908C 84EAA2 E014CE A87108 B2CEC0 790F92 62A79C 8129C4 B86B54
+            6557EC 9E9E89<br>7D571E C2F91E 454AA7 C3D99F 9ED267 15924B A8BB09
+            CD284F C9D8CD 5A0B26 D446D8 A62FF9 7B65AF 24B631 0254E8 E4D99D
+            2F780E 5FC825 97FA66 4BCEC5 6720F2 9541D6 43EB1F 66B021 6F3C46
+            BBE130 96C65D 62137C 6F21D8 DDF171 50A277 CE0D65 BE0565 366384
+            2282D4<br>237DE2 71D4A6 C02460 849978 BAA4AF 15F2B1 7E4DDE F42AC5
+            447396 BBA1D0 E0A1F4 2A90CE 87A328 F5D995 C3A44C 677A92 AD1B45
+            9E317F DEA35B 00F39D 2A6221 795A12 B4DD64 08DC0B DE655F 642652
+            AB46D3 65B393 91F3AB A58ED5 EB33A5 7222FA 25EFC8 498458
+            60D3A2<br>9C0882 A6CA8A D5859A 22FC88 04C222 4A432E 7B2BC5 3C3CAD
+            17F2D6 9A87C1 82DECD F09B1E 1D4276 F3DE13 CE2F55 CD03C8 5687FC
+            F13752 AA8B57 AF0F21 B57C70 8405F8 3689B7 7A29E1 67E4BB 654D82
+            8B4A82 28744F FEC0B9 F71826 A12A80 9C9C50 46D3C4 6873FF
+            5F60F1<br>8E66C7 6718D6 3D2158 C70D2C E2674D 98B2B4 3A7314 7CCACC
+            52B32D DB1D1F C88767 D232DE 2E5E71 896F64 69187C BDF73D 624D77
+            D34569 732255 09A68F 777E89 2AA8EC 884C48 A8B647 6CACF3 F5D27A
+            3FC000 A9103B 2CFCEE 0A0061 507F43 878C43 B8B37C 5E5BA7
+            9C61A5<br>3EF35D 4E8434 987AB6 7CC7BC 72484C 0637E6 4D3EFE 16BC2B
+            FE1FAA EA9F09 E78003 DA2283 CC5750 1ACA6C 886AB0 5392F0 455ADA
+            A91085 43D3B2 358F05 1B0668 043467 DDC68F EF114A E9A1C0 BF9498
+            74429E 58152C D0E2CC D55ABF E777E0 9C64F0 149A73 9B3BD5
+            5DBC36<br>DE2493 D8E54F CB2E61 B3FD9C 528E16 2B7282 07AF5E 584C24
+            4FB3E9 C54836 0B1A0A B4964E C84317 5D5945 0C296E E906B4 60037A
+            6372CB 9FB804 9306A1 22923E D77BFC 8FC83D 828998 38515F 2C4D80
+            BDD948 E027A3 140590 54FF03 E3A3E0 139FE8 1EBD75 AFB608
+            FE5710<br>B5725C EDAC69 7D77EC 902A63 FF15A8 A8A97C 1AEEFE A5E21A
+            27DE25 130AD4 F1E213 FDCDFF ED8DC1 C98B4F B52A96 D3EE04 335A59
+            295A45 F72019 D805C8 928ACC D741E0 1B9789 91D90E A59457 3C7DB2
+            F8AB89 1A4215 91FB22 0C5979 3DCC1C BD9CCA AF6B25 2A91EC
+            3DE9C7<br>6942EF D6F2C4 7352BB 0C6930 13C9F5 98C556 E9BCF2 56128B
+            A4C869 AD3FD1 E37B65 9C9C75 E58A27 6A02D1 4947BB FBD77E D1BFAD
+            A27F1F E744EF 8D6996 D56E51 6B7C9B 2C2101 EC4F79 D98F6B C935FA
+            412EA8 600AD9 27B7CE A2D04B C70886 0E4AAF 7FFAC4 60BAFD
+            34402A<br>044703 F9DB78 664DBE 86BE35 4400A1 BEE531 8D2861 81980E
+            BD781C 46E5FC C0055E 0AFB36 895F40 191CEC 332618 16E867 862CD4
+            0AB592 B0C040 AED2CD 3EF0FC 59153D 39E528 C4BF30 83BA11 550A24
+            25E15D E5E267 46774E A7DB6A B14286 00DA5A B37B50 B79C23
+            C731CE<br>C49A7C CA49F8 FB599F 34B335 C712E0 E2C577 2531BD 732E7B
+            EFE7CA 269B01 8CD32E AF5983 E98D16 CDEAA7 389E2E D5B869 10F89A
+            9127E0 A95DB5 42C666 FCE84D E5AA58 A65B9F E78193 BD10CC 040F4E
+            FAFEEB F2FBED C8DE19 8FB059 780A84 60B367 6A4742 779670
+            F71579<br>809836 0CB99C A223DD E80CEC 792844 3C209C 9F66F0 1846D8
+            EFF65C 70F266 AB8CB8 5C7D3E AD30D5 97AEA4 307FBC 285392 509480
+            C1617B 78896F 1E8C5F 863DBF 5ECA29 9EC9B5 D11B84 671B50 EF8277
+            EA1423 7EE49C F3DF36 CB1EA0 EF3085 21A7F7 F06430 980D7F
+            C55599<br>A5DA94 EE6176 E721B8 4CDD28 2F313F 65FA8C 1C546B 98E4E3
+            84FF</div>
+
+        <!-- 3. Hiệu ứng CRT lưới màn hình -->
+        <div class="crt-effect"></div>
+
+        <!-- 4. Bản HUD theo dõi góc trái -->
+        <div class="hud">
+            <div>SYS_NODE_ID: <span id="hud-node">0x52A9D7</span></div>
+            <div>ENCRYPTION_BYPASS: <span id="hud-enc">RSA-4096
+                    (CRACKING)</span></div>
+            <div class="blink-red">WARN: ROOT ACCESS OVERRIDE IN PROGRESS</div>
+        </div>
+
+        <!-- 5. Phím điều khiển chính ở giữa -->
+        <div class="modal">
+            <div class="modal-inner">
+                <div class="scan-bar"></div> <!-- Đường quét scanner -->
+
+                <div class="header-title">[ HỆ THỐNG XÂM
+                    NHẬP MÃ ẨN CASINO VIP ]</div>
+
+                <div class="status-row">
+                    <div>TIẾN TRÌNH THỰC THI:</div>
+                    <div id="percent">100.00%</div>
+                </div>
+
+                <div class="bar-container">
+                    <div class="bar-fill" id="bar" style="width: 100%;"></div>
+                </div>
+
+                <div class="terminal" id="terminal">
+                    <!-- Data đổ xuống từ JS bằng giải thuật Dịch Mã -->
+                    <div class="terminal" id="terminal"><div
+                            class="prefix">[18:20:21.270]</div><div
+                            class="message ">Đang mở cổng kết nối ẩn (Ghost
+                            Tunnel) tới máy chủ Casino...</div></div><div
+                        class="terminal" id="terminal"><div
+                            class="prefix">[18:20:21.799]</div><div
+                            class="message ">Tường lửa phân tán Cloudflare tầng
+                            mạng lõi: BYPASSED</div></div><div
+                        class="term-line"><div
+                            class="prefix">[18:20:21.556]</div><div
+                            class="message ">Đang dò tìm lỗ hổng trong mã nguồn
+                            lưu trữ Thuật toán...</div></div><div
+                        class="term-line"><div
+                            class="prefix">[18:20:21.574]</div><div
+                            class="message hl">[+] THÀNH CÔNG: Mã ẩn vô hiệu hóa
+                            truy vết IP User đã bị vô hiệu.</div></div><div
+                        class="term-line"><div
+                            class="prefix">[18:20:21.454]</div><div
+                            class="message ">Đang cấu trúc lại chuỗi bảo mật
+                            RSA-4096...</div></div><div class="term-line"><div
+                            class="prefix">[18:20:21.804]</div><div
+                            class="message ">Đang ghi đè dữ liệu... Kích hoạt
+                            quyền ROOT cho tài khoản.</div></div><div
+                        class="term-line"><div
+                            class="prefix">[18:20:21.649]</div><div
+                            class="message hl">[+] THÀNH CÔNG: Tắt cơ chế nhà
+                            cái theo dõi Lịch Sử Cược</div></div><div
+                        class="term-line"><div
+                            class="prefix">[18:20:22.736]</div><div
+                            class="message ">Tiêm mã độc kích hoạt hệ số THẮNG
+                            LỚN (BIG WIN MOD)...</div></div><div
+                        class="term-line"><div
+                            class="prefix">[18:20:22.826]</div><div
+                            class="message hl">[+] THÀNH CÔNG: Max tỉ lệ NỔ HŨ
+                            (JACKPOT) &amp; SCATTER cho vòng tiếp
+                            theo.</div></div><div class="term-line"><div
+                            class="prefix">[08:52:10.106]</div><div
+                            class="message ">Đang mở cổng kết nối ẩn (Ghost
+                            Tunnel) tới máy chủ Casino...</div></div><div
+                        class="term-line"><div
+                            class="prefix">[08:52:10.440]</div><div
+                            class="message ">Tường lửa phân tán Cloudflare tầng
+                            mạng lõi: BYPASSED</div></div><div
+                        class="term-line"><div
+                            class="prefix">[08:52:10.272]</div><div
+                            class="message ">Đang dò tìm lỗ hổng trong mã nguồn
+                            lưu trữ Thuật toán...</div></div><div
+                        class="term-line"><div
+                            class="prefix">[08:52:10.186]</div><div
+                            class="message hl">[+] THÀNH CÔNG: Mã ẩn vô hiệu hóa
+                            truy vết IP User đã bị vô hiệu.</div></div><div
+                        class="term-line"><div
+                            class="prefix">[08:52:10.000]</div><div
+                            class="message ">Đang cấu trúc lại chuỗi bảo mật
+                            RSA-4096...</div></div><div class="term-line"><div
+                            class="prefix">[08:52:10.958]</div><div
+                            class="message ">Đang ghi đè dữ liệu... Kích hoạt
+                            quyền ROOT cho tài khoản.</div></div><div
+                        class="term-line"><div
+                            class="prefix">[08:52:11.218]</div><div
+                            class="message hl">[+] THÀNH CÔNG: Tắt cơ chế nhà
+                            cái theo dõi Lịch Sử Cược</div></div><div
+                        class="term-line"><div
+                            class="prefix">[08:52:11.183]</div><div
+                            class="message ">Tiêm mã độc kích hoạt hệ số THẮNG
+                            LỚN (BIG WIN MOD)...</div></div><div
+                        class="term-line"><div
+                            class="prefix">[08:52:11.888]</div><div
+                            class="message hl">[+] THÀNH CÔNG: Max tỉ lệ NỔ HŨ
+                            (JACKPOT) &amp; SCATTER cho vòng tiếp
+                            theo.</div></div></div>
+
+                <!-- Khung Màn hình báo thành công sẽ che lấp màn hình đen -->
+                <div class="success-overlay" id="success">
+                    <div class="shield-icon">🔓</div>
+                    <div class="success-text">XÓA MÃ ẨN &amp; KÍCH ROOT THÀNH
+                        CÔNG</div>
+                    <a class="btn-hack" id="btn-link"
+                        href="javascript:void(0);">TRUY CẬP VÀO GAME NGAY ➡</a>
+                    <div class="success-features">
+                        <div>✅ KHÔNG LẬP TRÌNH CAN THIỆP KẾT QUẢ </div>
+                        <div>✅ AN TOÀN BẢO MẬT TUYỆT ĐỐI THÔNG TIN</div>
+                        <div>✅ TẮT CHẾ ĐỘ LƯU TRỮ XÓA MÃ ẨN IP
+                            MẠNG</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        // ==========================================
+        // CÀI ĐẶT URL MỤC TIÊU ĐỘNG THEO TÊN MIỀN
+        // ==========================================
+        function getTargetRedirectUrl() {
+            return "https://mm88d2d32qc.mm88k.com/register.html";
+        }
+
+        const btnLink = document.getElementById('btn-link');
+        if (btnLink) {
+            btnLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = getTargetRedirectUrl();
+            });
+        }
+
+        // --- BACKGROUND MA TRẬN (MATRIX DIGITAL RAIN) ---
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Font mã hóa Nhật Bản trộn Latin + Số
+        const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴッン';
+        const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const nums = '0123456789!@#$%^&*';
+        const alphabet = katakana + latin + nums;
+        const fontSize = 16;
+        const columns = canvas.width/fontSize;
+        const drops = [];
+        for(let x = 0; x < columns; x++) drops[x] = 1;
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 5, 0, 0.08)'; // Tô mờ để tạo vệt
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#1a8c2d'; // Màu nền xanh của số
+            ctx.font = fontSize + 'px monospace';
+            for(let i = 0; i < drops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                // Random ký tự xịn hơn bằng cách làm chúng sáng lên
+                if (Math.random() > 0.95) {
+                    ctx.fillStyle = '#fff';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#fff';
+                } else {
+                    ctx.fillStyle = '#1a8c2d';
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+                if(drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 40);
+
+        // --- BACKGROUND DATA HEX ---
+        const hexBg = document.getElementById('hex');
+        setInterval(() => {
+            let str = '';
+            for(let i=0; i<35; i++) str += Math.floor(Math.random()*16777215).toString(16).toUpperCase().padStart(6,'0') + '  ';
+            hexBg.innerText = str + '\n' + hexBg.innerText;
+            if(hexBg.innerText.length > 3000) hexBg.innerText = hexBg.innerText.substring(0, 3000);
+        }, 50);
+
+        // --- CẬP NHẬT HUD THÔNG BÁO GÓC TRÁI ---
+        setInterval(() => {
+            document.getElementById('hud-node').innerText = '0x' + Math.floor(Math.random()*9999999).toString(16).toUpperCase();
+            const encList = ['AES-256 (BYPASSING)', 'RSA-4096 (CRACKING)', 'BLOWFISH (DECRYPT: OK)'];
+            document.getElementById('hud-enc').innerText = encList[Math.floor(Math.random()*encList.length)];
+        }, 800);
+
+        // --- KỊCH BẢN XÂM NHẬP HACKER (CHUỖI LỆNH) ---
+        const terminal = document.getElementById('terminal');
+        const tasks = [
+            { txt: "Đang mở cổng kết nối ẩn (Ghost Tunnel) tới máy chủ Casino...", hl: false },
+            { txt: "Tường lửa phân tán Cloudflare tầng mạng lõi: BYPASSED", hl: false },
+            { txt: "Đang dò tìm lỗ hổng trong mã nguồn lưu trữ Thuật toán...", hl: false },
+            { txt: "[+] THÀNH CÔNG: Mã ẩn vô hiệu hóa truy vết IP User đã bị vô hiệu.", hl: true },
+            { txt: "Đang cấu trúc lại chuỗi bảo mật RSA-4096...", hl: false },
+            { txt: "Đang ghi đè dữ liệu... Kích hoạt quyền ROOT cho tài khoản.", hl: false },
+            { txt: "[+] THÀNH CÔNG: Tắt cơ chế nhà cái theo dõi Lịch Sử Cược", hl: true },
+            { txt: "Tiêm mã độc kích hoạt hệ số THẮNG LỚN (BIG WIN MOD)...", hl: false },
+            { txt: "[+] THÀNH CÔNG: Max tỉ lệ NỔ HŨ (JACKPOT) & SCATTER cho vòng tiếp theo.", hl: true },
+            { txt: "Đang xóa log quét hành vi mạng và dọn dẹp hệ thống...", hl: false },
+            { txt: "[+] HOÀN TẤT. KẾT NỐI VÀO CỔNG GAME KÍCH HOẠT CHẾ ĐỘ VIP CHUẨN BỊ.", hl: true }
+        ];
+
+        // Lấy thời gian siêu chuẩn xác để làm Timestamp Hacker
+        function getTimestamp() {
+            let d = new Date();
+            let ms = Math.floor(Math.random()*999).toString().padStart(3,'0');
+            return `[${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}.${ms}]`;
+        }
+
+        // --- HIỆU ỨNG DỊCH MÃ (DECRYPT) GÂY ẢO GIÁC ---
+        const scrambleChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+<>{}|?';
+        async function scrambleText(element, finalString, speed = 25) {
+            let iterations = 0;
+            const len = finalString.length;
+            return new Promise(resolve => {
+                const interval = setInterval(() => {
+                    let textBuffer = '';
+                    for (let i = 0; i < len; i++) {
+                        if (i < iterations) {
+                            textBuffer += finalString[i];
+                        } else {
+                            // Số ký tự ngẫu nhiên liên tục thay đổi tạo cảm giác là đang hack mã hoá
+                            textBuffer += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                        }
+                    }
+                    element.innerHTML = textBuffer;
+                    
+                    if (iterations >= len) {
+                        clearInterval(interval);
+                        // Make sure the exact original string is set at the end
+                        element.innerHTML = finalString; 
+                        resolve();
+                    }
+                    iterations += 2.5; // Tăng cực mạnh tốc độ lộ chữ thật
+
+                }, speed);
+            });
+        }
+
+        let progress = 0;
+        let taskIdx = 0;
+        let isScrambling = false;
+        
+        async function addLogLine() {
+            if (taskIdx >= tasks.length) return;
+            isScrambling = true;
+
+            const task = tasks[taskIdx];
+            taskIdx++;
+
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'term-line';
+
+            const prefix = document.createElement('div');
+            prefix.className = 'prefix';
+            prefix.innerText = getTimestamp();
+
+            const msgSpan = document.createElement('div');
+            msgSpan.className = 'message ' + (task.hl ? 'hl' : '');
+            
+            lineDiv.appendChild(prefix);
+            lineDiv.appendChild(msgSpan);
+            terminal.appendChild(lineDiv);
+            
+            // Auto scroll xuống quá trình mới
+            terminal.scrollTop = terminal.scrollHeight;
+
+            await scrambleText(msgSpan, task.txt, 2);
+            isScrambling = false;
+        }
+
+        // --- LUỒNG CHẠY CHÍNH LIÊN KẾT THANH PROGRESS VÀ DỊCH MÃ ---
+        function runSystem() {
+            const pb = document.getElementById('bar');
+            const pt = document.getElementById('percent');
+            
+            // Ép tốc độ vọt cmnl chạy xé gió để tổng ~3s
+            const inc = Math.random() * 1.5 + 1.2;
+            progress += inc;
+            if(progress >= 100) progress = 100;
+
+            pb.style.width = progress + '%';
+            pt.innerText = progress.toFixed(2).padStart(5,'0') + '%'; // Số thập phân nhích chi tiết
+
+            // Mapping điểm chia độ khó giả theo dòng text
+            const triggerPoints = [1, 9, 20, 31, 45, 58, 69, 81, 88, 94, 98];
+            if (taskIdx < triggerPoints.length && progress >= triggerPoints[taskIdx] && !isScrambling) {
+                addLogLine();
+            }
+
+            if(progress < 100) {
+                // Random ngắt thời gian chạy ngắn lại (max tốc 10-30ms)
+                setTimeout(runSystem, 10 + Math.random()*20);
+            } else {
+                // Cán đích 100%, hiển thị bụp lên lập tức
+                setTimeout(() => {
+                    document.querySelector('.header-title').style.display = 'none';
+                    document.querySelector('.status-row').style.display = 'none';
+                    document.querySelector('.bar-container').style.display = 'none';
+                    document.querySelector('.terminal').style.display = 'none';
+                    document.getElementById('success').style.display = 'flex';
+                }, 300);
+            }
+        }
+
+        // Trì hoãn chớp mắt rồi chạy ngay
+        setTimeout(runSystem, 200);
+
+    </script>
+    </body></html>
