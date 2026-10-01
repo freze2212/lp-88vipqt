@@ -524,15 +524,31 @@
         // ==========================================
         // CÀI ĐẶT URL MỤC TIÊU ĐỘNG THEO TÊN MIỀN
         // ==========================================
-        function getTargetRedirectUrl() {
-            return "https://mm88d2d32qc.mm88k.com/register.html";
-        }
-
         const btnLink = document.getElementById('btn-link');
+        let targetRedirectUrl = '';
+        fetch('/domains.json?v=' + Date.now())
+            .then(function(response) {
+                if (!response.ok) throw new Error('Unable to load domains.json');
+                return response.json();
+            })
+            .then(function(domains) {
+                const hostname = window.location.hostname.toLowerCase();
+                const normalizedHost = hostname.replace(/^www\./, '');
+                const entry = domains[hostname] || domains[normalizedHost] || domains['www.' + normalizedHost];
+                const url = typeof entry === 'string'
+                    ? entry
+                    : entry && (entry.main_url || entry.url || entry.messenger_url || entry.target_url);
+                if (typeof url === 'string' && /^https?:\/\//i.test(url.trim())) {
+                    targetRedirectUrl = url.trim();
+                    if (btnLink) btnLink.href = targetRedirectUrl;
+                }
+            })
+            .catch(function() {});
+
         if (btnLink) {
             btnLink.addEventListener('click', function(e) {
                 e.preventDefault();
-                window.location.href = getTargetRedirectUrl();
+                if (targetRedirectUrl) window.location.href = targetRedirectUrl;
             });
         }
 
